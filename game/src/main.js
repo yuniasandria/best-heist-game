@@ -248,8 +248,10 @@ function caught(reason) {
   return true;
 }
 
+let lastState = game.state;
 function update(dt) {
   game.time += dt;
+  if (game.state !== lastState) { input.clearPressed(); lastState = game.state; }
   if (game.messageTtl > 0) {
     game.messageTtl -= dt;
     if (game.messageTtl <= 0) game.message = '';
@@ -317,6 +319,8 @@ function stageShot(mode) {
     freshLevel(0);
     game.state = 'win';
     game.totalLoot = 12400;
+    game.lootValue = 12400;
+    game.lootTaken = 3; // HUD counts this room's pieces; the overlay carries the total
     game.rating = 'GHOST';
     game.perLevel = [
       { name: 'I — THE GALLERY', rating: 'GHOST', loot: 2800 },
@@ -332,9 +336,9 @@ function stageShot(mode) {
   // Thief in shadow at the carpet edge, a guard's cone sweeping past.
   game.thief = { x: 560, y: 470, face: Math.PI / 2 };
   game.guards[0].x = 480; game.guards[0].y = 380;
-  game.guards[0].angle = Math.PI / 2; game.guards[0].wait = 99;
+  game.guards[0].angle = 0.84; game.guards[0].wait = 99;
   game.guards[0].suspicion = 62; game.guards[0].state = 'investigate';
-  game.guards[1].x = 830; game.guards[1].y = 520;
+  game.guards[1].x = 1080; game.guards[1].y = 250;
   game.guards[1].angle = -Math.PI / 2; game.guards[1].wait = 99;
   game.cameras[0].angle = Math.PI / 2 + 0.5;
   game.alarm = 35; game.worstAlarm = 35;

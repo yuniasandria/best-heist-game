@@ -33,6 +33,11 @@ export class Input {
 
   down(...codes) { return codes.some((c) => this.keys.has(c)); }
 
+  // Drop every edge-triggered press not yet consumed. main.js calls this
+  // whenever the game changes state, so a key pressed on one screen can
+  // never leak through and fire on the next (e.g. Enter skipping an intro).
+  clearPressed() { this._pressed.clear(); }
+
   // True once, on the frame the key went down. main.js calls this every frame
   // for the keys it cares about so a press is never double-counted.
   pressed(code) {

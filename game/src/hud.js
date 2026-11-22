@@ -87,9 +87,9 @@ export function drawTitle(c) {
   c.fillStyle = '#1c1626';
   c.fillRect(0, 480, VIEW_W, 240);
   c.fillStyle = '#cfe4ff';
-  c.beginPath(); c.arc(1020, 150, 70, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(1140, 105, 52, 0, Math.PI * 2); c.fill();
   c.fillStyle = 'rgba(207,228,255,0.12)';
-  c.beginPath(); c.moveTo(950, 220); c.lineTo(1090, 220); c.lineTo(1180, 720); c.lineTo(860, 720); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(1088, 157); c.lineTo(1192, 157); c.lineTo(1260, 720); c.lineTo(1020, 720); c.closePath(); c.fill();
   c.fillStyle = '#2b2430';
   c.fillRect(180, 420, 120, 300); c.fillRect(420, 380, 160, 340); c.fillRect(700, 430, 110, 290);
   c.fillStyle = '#e8c15a';
@@ -111,8 +111,7 @@ export function drawTitle(c) {
   let y = 300;
   for (const line of lines) { c.fillText(line, VIEW_W / 2, y); y += 30; }
   c.fillStyle = '#e8c15a'; c.font = 'bold 22px Georgia, serif';
-  const blink = Math.sin(Date.now() / 350) > -0.2;
-  if (blink) c.fillText('— press ENTER to begin the heist —', VIEW_W / 2, 620);
+  c.fillText('— press ENTER to begin the heist —', VIEW_W / 2, 620);
 }
 
 export function drawLevelIntro(c, level, index) {

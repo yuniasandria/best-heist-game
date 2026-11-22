@@ -62,8 +62,42 @@ export function circleHitsRect(cx, cy, r, rect) {
   return dx * dx + dy * dy < r * r;
 }
 
+// Push a circle out of a rect it already overlaps, along the smallest
+// penetration, so a body that starts a frame inside a solid is eased out
+// instead of being snapped across it by the directional slide below.
+export function pushOutOfRect(cx, cy, r, rect) {
+  const nx = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
+  const ny = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
+  const dx = cx - nx, dy = cy - ny;
+  const d2 = dx * dx + dy * dy;
+  if (d2 >= r * r) return { x: cx, y: cy };
+  if (d2 > 0.0001) {
+    const d = Math.sqrt(d2);
+    const push = r - d;
+    return { x: cx + (dx / d) * push, y: cy + (dy / d) * push };
+  }
+  // Centre inside the rect: leave by the nearest face.
+  const left = cx - rect.x, right = rect.x + rect.w - cx;
+  const top = cy - rect.y, bottom = rect.y + rect.h - cy;
+  const m = Math.min(left, right, top, bottom);
+  if (m === left) return { x: rect.x - r, y: cy };
+  if (m === right) return { x: rect.x + rect.w + r, y: cy };
+  if (m === top) return { x: cx, y: rect.y - r };
+  return { x: cx, y: rect.y + rect.h + r };
+}
+
 // Move a circle against rects, sliding along walls. Returns the new position.
 export function moveCircle(x, y, r, dx, dy, solids) {
+  // First, ease out of any solid the body already overlaps, so the slide
+  // below never has to guess which side of a wall it is on.
+  for (let pass = 0; pass < 2; pass++) {
+    for (const s of solids) {
+      if (circleHitsRect(x, y, r, s)) {
+        const p = pushOutOfRect(x, y, r, s);
+        x = p.x; y = p.y;
+      }
+    }
+  }
   let nx = x + dx;
   for (const s of solids) {
     if (circleHitsRect(nx, y, r, s)) {

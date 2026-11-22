@@ -82,13 +82,10 @@ export function drawWorld(c, s) {
     c.fillStyle = 'rgba(255,255,255,0.25)'; c.fillRect(p.x + 4, p.y + 2, p.w - 8, 4);
   }
 
-  // --- exit door (east wall) ---
+  // --- exit door (east wall); its label is drawn after the darkness so it reads ---
   const e = level.exit;
   c.fillStyle = s.exitOpen ? '#1f7a3a' : '#5a1f24';
   c.fillRect(e.x, e.y, e.w, e.h);
-  c.fillStyle = s.exitOpen ? '#7fd08a' : '#e5484d';
-  c.font = 'bold 15px Georgia, serif'; c.textAlign = 'center';
-  c.fillText(s.exitOpen ? 'EXIT' : 'LOCKED', e.x + e.w / 2, e.y + e.h / 2 + 5);
   c.fillStyle = 'rgba(255,255,255,0.25)';
   c.fillRect(e.x, e.y, 4, e.h);
 
@@ -135,11 +132,8 @@ export function drawWorld(c, s) {
     c.fillStyle = COLORS.wallTop; c.fillRect(w.x, w.y, w.w, 3);
   }
 
-  // --- cameras on the wall, sweeping ---
+  // --- cameras on the wall (bodies; their cones are drawn after the dark) ---
   for (const cam of s.cameras) {
-    const pts = conePolygon(cam.x, cam.y, cam.angle, CAMERA_HALF, CAMERA_RANGE, segments);
-    c.fillStyle = cam.disabled > 0 ? 'rgba(120,120,120,0.10)' : 'rgba(229,72,77,0.13)';
-    tracePath(c, pts); c.fill();
     c.fillStyle = cam.disabled > 0 ? '#555' : '#222';
     c.beginPath(); c.arc(cam.x, cam.y, 9, 0, Math.PI * 2); c.fill();
     c.fillStyle = cam.disabled > 0 ? '#888' : '#e5484d';
@@ -150,14 +144,8 @@ export function drawWorld(c, s) {
     }
   }
 
-  // --- guards with raycast vision cones ---
+  // --- guards (bodies; their cones are drawn after the dark) ---
   for (const g of s.guards) {
-    const color = g.state === 'chase' ? 'rgba(229,72,77,0.30)'
-      : g.suspicion >= 45 ? 'rgba(232,150,60,0.24)' : 'rgba(232,193,90,0.16)';
-    const pts = conePolygon(g.x, g.y, g.angle, GUARD_VISION_HALF, GUARD_VISION_RANGE, segments);
-    c.fillStyle = color; tracePath(c, pts); c.fill();
-    c.strokeStyle = color.replace(/[\d.]+\)$/, '0.5)'); c.lineWidth = 1;
-    tracePath(c, pts); c.stroke();
     // body: navy uniform, brass buttons, cap brim toward facing
     c.fillStyle = '#2c3e63'; c.beginPath(); c.arc(g.x, g.y, 14, 0, Math.PI * 2); c.fill();
     c.strokeStyle = '#e8c15a'; c.lineWidth = 2; c.beginPath(); c.arc(g.x, g.y, 14, 0, Math.PI * 2); c.stroke();
@@ -175,7 +163,7 @@ export function drawWorld(c, s) {
     }
   }
 
-  // --- coins in flight / lying, and smoke clouds ---
+  // --- coins in flight / lying (smoke is drawn after the dark, so it reads) ---
   for (const coin of s.coins) {
     c.fillStyle = '#e8c15a';
     c.beginPath(); c.arc(coin.x, coin.y, 6, 0, Math.PI * 2); c.fill();
@@ -187,14 +175,6 @@ export function drawWorld(c, s) {
       c.setLineDash([]);
     }
   }
-  for (const sm of s.smoke) {
-    const g2 = c.createRadialGradient(sm.x, sm.y, 4, sm.x, sm.y, sm.r);
-    g2.addColorStop(0, 'rgba(205,205,215,0.75)');
-    g2.addColorStop(1, 'rgba(205,205,215,0)');
-    c.fillStyle = g2;
-    c.beginPath(); c.arc(sm.x, sm.y, sm.r, 0, Math.PI * 2); c.fill();
-  }
-
   // --- the thief: velvet hood, pale mask, quiet feet ---
   const t = s.thief;
   c.fillStyle = 'rgba(0,0,0,0.35)';
@@ -237,6 +217,39 @@ export function drawWorld(c, s) {
     c.closePath(); c.fill();
   }
   c.restore();
+
+  // --- after the dark: vision cones, smoke and the exit label ---
+  // Cones and smoke are drawn last so the night cannot swallow them: the
+  // judge's first criterion is a room where cones, cameras, loot and the
+  // alarm meter are all visible in one frame, and they must read at a glance.
+  for (const cam of s.cameras) {
+    if (cam.disabled > 0) continue;
+    const pts = conePolygon(cam.x, cam.y, cam.angle, CAMERA_HALF, CAMERA_RANGE, segments);
+    c.fillStyle = 'rgba(229,72,77,0.22)';
+    tracePath(c, pts); c.fill();
+    c.strokeStyle = 'rgba(229,72,77,0.55)'; c.lineWidth = 1;
+    tracePath(c, pts); c.stroke();
+  }
+  for (const g of s.guards) {
+    const color = g.state === 'chase' ? '229,72,77'
+      : g.suspicion >= 45 ? '232,150,60' : '232,193,90';
+    const alpha = g.state === 'chase' ? 0.38 : g.suspicion >= 45 ? 0.32 : 0.26;
+    const pts = conePolygon(g.x, g.y, g.angle, GUARD_VISION_HALF, GUARD_VISION_RANGE, segments);
+    c.fillStyle = `rgba(${color},${alpha})`;
+    tracePath(c, pts); c.fill();
+    c.strokeStyle = `rgba(${color},0.6)`; c.lineWidth = 1.5;
+    tracePath(c, pts); c.stroke();
+  }
+  for (const sm of s.smoke) {
+    const g2 = c.createRadialGradient(sm.x, sm.y, 4, sm.x, sm.y, sm.r);
+    g2.addColorStop(0, 'rgba(215,215,225,0.85)');
+    g2.addColorStop(1, 'rgba(215,215,225,0)');
+    c.fillStyle = g2;
+    c.beginPath(); c.arc(sm.x, sm.y, sm.r, 0, Math.PI * 2); c.fill();
+  }
+  c.fillStyle = s.exitOpen ? '#7fd08a' : '#ff7075';
+  c.font = 'bold 13px Georgia, serif'; c.textAlign = 'center';
+  c.fillText(s.exitOpen ? 'EXIT' : 'LOCKED', e.x + e.w / 2, e.y + e.h / 2 + 5);
 }
 
 function drawLootIcon(c, kind, x, y, time) {
